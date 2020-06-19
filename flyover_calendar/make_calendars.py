@@ -67,12 +67,10 @@ def split_months(df, year):
 
     return day_nums, day_vals
 
-
 # Taken from SO_tourist answer at: https://stackoverflow.com/questions/32485907/matplotlib-and-numpy-create-a-calendar-heatmap
-def create_year_calendar(day_nums, day_vals, outname='calendar.png'):
-    fig, axs = plt.subplots(1, 1, figsize=(18, 25))
-    for i, axs in enumerate(ax.flat):
-
+def create_year_calendar(day_nums, day_vals, file_prefix='example', year=2020):
+    for i in range(0, 12):
+        fig, axs = plt.subplots(1, 1, figsize=(5, 4))
         axs.imshow(day_vals[i+1], cmap='Purples', vmin=-0.05, vmax=1.25)  # heatmap
         axs.set_title(month_names[i], fontsize=20)
 
@@ -133,19 +131,16 @@ def create_year_calendar(day_nums, day_vals, outname='calendar.png'):
                 triangle = Polygon(patch_coords, fc='w', alpha=0.7)
                 axs.add_artist(triangle)
 
-    # Final adjustments
-    # remove uneeded axes
-    for i in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
-        fig.delaxes(ax[i])
-    plt.subplots_adjust(left=0.04, right=0.96, top=0.88, bottom=0.04)
-    # plt.subplots_adjust(left=0.04, right=0.96, top=0.96, bottom=0.04)
-    fig.tight_layout()
+        # Final adjustments
+        plt.subplots_adjust(left=0.04, right=0.96, top=0.88, bottom=0.04)
+        # plt.subplots_adjust(left=0.04, right=0.96, top=0.96, bottom=0.04)
+        fig.tight_layout()
 
-    # Save to file
-    plt.savefig(outname)
-
+        # Save to file
+        outname = f'../alg_sat_images/{file_prefix}_{year}{i+1:02}.png'
+        plt.savefig(outname, dpi=120)
 
 for year in years:
-    df =  date_series('2020-01-04', 5, partial_starts='2020-01-02')
+    df = date_series('2020-01-04', 5)
     day_nums, day_vals = split_months(df, year)
-    create_year_calendar(day_nums, day_vals, outname='test.png')
+    create_year_calendar(day_nums, day_vals, file_prefix='test', year=2020)
