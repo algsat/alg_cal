@@ -1,23 +1,23 @@
+# IMPORT
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 
-# Settings
+# INPUT
+# files
+s2_acq_dates_file = 'data/s2_acqday_dates.csv'
+l8_acq_dates_file = 'data/l8_acqday_dates.csv'
+
+# settings
 years = [2020, 2021]
-weeks = [1, 2, 3, 4, 5, 6]
-days = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-month_names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-               'September', 'October', 'November', 'December']
 
 # FUNCTIONS
-
-#
 def date_series(full_starts, return_period, partial_starts=None):
     if isinstance(full_starts, str):
         full_starts = [full_starts]
     year = full_starts[0][:4]
-    idx = pd.date_range(f'{year}-01-01', periods=365, freq='D')
+    idx = pd.date_range(f'{year}-01-01', end=f'{year}-12-31', freq='D')
     pass_series = pd.Series(0, index=idx)
     final_date = f'{year}-12-31'
     for full_start in full_starts:
@@ -68,7 +68,7 @@ def split_months(df, year):
     return day_nums, day_vals
 
 # Taken from SO_tourist answer at: https://stackoverflow.com/questions/32485907/matplotlib-and-numpy-create-a-calendar-heatmap
-def create_year_calendar(day_nums, day_vals, file_prefix='example', year=2020):
+def create_year_calendar(day_nums, day_vals, file_prefix='example'):
     for i in range(0, 12):
         fig, axs = plt.subplots(1, 1, figsize=(5, 4))
         axs.imshow(day_vals[i+1], cmap='Purples', vmin=-0.05, vmax=1.25)  # heatmap
@@ -118,14 +118,43 @@ def create_year_calendar(day_nums, day_vals, file_prefix='example', year=2020):
         fig.tight_layout()
 
         # Save to file
-        outname = f'../alg_sat_images/{file_prefix}_{year}{i+1:02}.png'
+        outname = f'images/{file_prefix}{i+1:02}.png'
         plt.savefig(outname, dpi=120)
 
-def main():
-    for year in years:
-        df = date_series('2020-01-04', 5)
-        day_nums, day_vals = split_months(df, year)
-        create_year_calendar(day_nums, day_vals, file_prefix='test', year=year)
+def first_pass_of_year(start_date, year, interval):
+    year_start_dt = pd.to_datetime(f'{year}-01-01')
+    offset = (pd.to_datetime(start_date) - year_start_dt).days % interval
+    first_dt = year_start_dt + pd.to_timedelta(offset, 'D')
+    return first_dt.strftime('%Y-%m-%d')
 
-if __name__ == "main":
-    main()
+# BODY
+# def main():
+if 1:
+    # load files
+    l8_dates = pd.read_csv(l8_acq_dates_file)
+    s2_dates = pd.read_csv(s2_acq_dates_file)
+    # define some settings
+    intervals = {'s2': 5, 'l8': 16}
+    start_dates = {'s2': s2_dates, 'l8': l8_dates}
+    weeks = [1, 2, 3, 4, 5, 6]
+    days = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+    month_names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+                   'September', 'October', 'November', 'December']
+    # loop over satellites
+    for sat in ['l8', 's2']:
+        pass_int = intervals[sat]
+        # loop over years
+        for year in years:
+            yr_starts = (
+                start_dates[sat]
+                .assign(start_date = lambda x: [first_pass_of_year(date, year, pass_int) for date in x.date])
+            )
+            # loop over acq_dates
+            for acqday, yr_start in zip(yr_starts.acqday, yr_starts.start_date):
+                file_prefix = f'{sat}_acqday{acqday}_{year}'
+                df = date_series(yr_start, pass_int)
+                day_nums, day_vals = split_months(df, year)
+                create_year_calendar(day_nums, day_vals, file_prefix=file_prefix)
+
+# if __name__ == "main":
+#     main()
