@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 
 # Settings
-years = [2020]
+years = [2020, 2021]
 weeks = [1, 2, 3, 4, 5, 6]
 days = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 month_names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
@@ -97,22 +97,6 @@ def create_year_calendar(day_nums, day_vals, file_prefix='example', year=2020):
             for d in range(len(days)):
                 day_val = day_vals[i+1][w, d]
                 day_num = day_nums[i+1][w, d]
-
-                # Value label
-                # axs.text(d, w+0.3, f"{day_val:0.0f}",
-                #          ha="center", va="center",
-                #          fontsize=7, color="w", alpha=0.8)
-
-                # If value is 0, draw a grey patch
-                # if day_val == 0:
-                #     patch_coords = ((d - 0.5, w - 0.5),
-                #                     (d - 0.5, w + 0.5),
-                #                     (d + 0.5, w + 0.5),
-                #                     (d + 0.5, w - 0.5))
-                #
-                #     square = Polygon(patch_coords, fc='#DDDDDD')
-                #     axs.add_artist(square)
-
                 # If day number is a valid calendar day, add an annotation
                 if not np.isnan(day_num):
                     # axs.text(d+0.45, w-0.31, f"{day_num:0.0f}",
@@ -121,9 +105,6 @@ def create_year_calendar(day_nums, day_vals, file_prefix='example', year=2020):
                              fontsize=14, color="#003333", alpha=0.8)  # day
 
                 # Aesthetic background for calendar day number
-                # patch_coords = ((d-0.1, w-0.5),
-                #                 (d+0.5, w-0.5),
-                #                 (d+0.5, w+0.1))
                 patch_coords = ((d-0.4, w-0.5),
                                 (d+0.5, w-0.5),
                                 (d+0.5, w+0.4))
@@ -140,7 +121,11 @@ def create_year_calendar(day_nums, day_vals, file_prefix='example', year=2020):
         outname = f'../alg_sat_images/{file_prefix}_{year}{i+1:02}.png'
         plt.savefig(outname, dpi=120)
 
-for year in years:
-    df = date_series('2020-01-04', 5)
-    day_nums, day_vals = split_months(df, year)
-    create_year_calendar(day_nums, day_vals, file_prefix='test', year=2020)
+def main():
+    for year in years:
+        df = date_series('2020-01-04', 5)
+        day_nums, day_vals = split_months(df, year)
+        create_year_calendar(day_nums, day_vals, file_prefix='test', year=year)
+
+if __name__ == "main":
+    main()
