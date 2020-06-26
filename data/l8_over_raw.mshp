@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SAGA_METADATA>
+  <HISTORY saga-version="2.3.2">
+    <MODULE library="shapes_polygons" id="12" name="Polygon Self-Intersection">
+      <OPTION type="table_field" id="ID" name="Identifier" index="1">path</OPTION>
+      <INPUT type="shapes" id="POLYGONS" name="Polygons">
+        <FILE>C:/Users/shundt/AppData/Local/Temp/2/processing_f8e05a88d5cf48d299c6600ff4283f67/7c20363799264909851bf9fc70cad0e8/POLYGONS.shp</FILE>
+      </INPUT>
+      <OUTPUT type="shapes" id="INTERSECT" name="Intersection">POLYGONS [self-intersection]</OUTPUT>
+    </MODULE>
+  </HISTORY>
+  <SOURCE>
+    <FILE></FILE>
+    <DATABASE>
+      <FIELDS>
+        <FIELD TYPE="LONGINT">gid</FIELD>
+        <FIELD TYPE="DOUBLE">path</FIELD>
+        <FIELD TYPE="STRING">acqdayl7</FIELD>
+        <FIELD TYPE="STRING">acqdayl8</FIELD>
+        <FIELD TYPE="STRING">ID</FIELD>
+      </FIELDS>
+    </DATABASE>
+    <PROJECTION>
+      <OGC_WKT>GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["Degree",0.017453292519943295]]</OGC_WKT>
+      <PROJ4>+proj=longlat +a=6378137.000000 +b=6356752.314245 +no_defs</PROJ4>
+      <EPSG>-1</EPSG>
+    </PROJECTION>
+  </SOURCE>
+  <DESCRIPTION></DESCRIPTION>
+</SAGA_METADATA>
