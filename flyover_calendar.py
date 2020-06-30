@@ -1,6 +1,8 @@
 # IMPORT
+import os
 import numpy as np
 import pandas as pd
+import geopandas as gpd
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from matplotlib.colors import ListedColormap
@@ -11,9 +13,17 @@ import seaborn as sns
 # files
 s2_acq_dates_file = 'data/s2_acqday_dates.csv'
 l8_acq_dates_file = 'data/l8_acqday_dates.csv'
+s2_overlap_file = 'data/s2_over.shp'
+l8_overlap_file = 'data/l8_over.shp'
 wb_coverage_file = 'data/wb_coverage.csv'
+l8_paths_file = 'data/l8_paths.shp'
+s2_track_acq_file = 'data/s2_track_acqday.csv'
 
 # settings
+wb_ann_calendars = True
+ann_graph = True
+mon_graph = True
+path_month_and_ann_calendars = True
 years = [2020, 2021]
 colors = ['#ffffff', '#663399', '#003366', '#006400', '#ffcccb', '#ffae42', '#98fb98', '#ffffbf', '#d9d9d9', '#d3bda6']
 
@@ -178,72 +188,132 @@ def create_year_calendar(day_nums, day_vals, file_prefix='example', color_dict=N
     # Save to file
     outname = f'images/{file_prefix}.pdf'
     plt.savefig(outname, dpi=120)
+    plt.close()
 
-# def create_year_calendar(day_nums, day_vals, file_prefix='example', color_dict=None):
-#     for i in range(0, 12):
-#         # get colormap
-#         if color_dict in None:
-#             cmap='Purples'
-#         else:
-#             un_vals = np.sort(np.unique(day_vals[i+1]))
-#             color_list = [color_dict[val] for val in un_vals]
-#             cmap = ListedColormap(color_list)
-#         fig, axs = plt.subplots(1, 1, figsize=(5, 4))
-#         axs.imshow(day_vals[i+1], cmap='Purples', vmin=-0.05, vmax=1.25)  # heatmap
-#         axs.set_title(month_names[i], fontsize=20)
-#
-#         # Labels
-#         axs.set_xticks(np.arange(len(days)))
-#         axs.set_xticklabels(days, fontsize=14, fontweight='bold', color='#555555')
-#         axs.set_yticklabels([])
-#
-#         # Tick marks
-#         axs.tick_params(axis=u'both', which=u'both', length=0)  # remove tick marks
-#         axs.xaxis.tick_top()
-#
-#         # Modify tick locations for proper grid placement
-#         axs.set_xticks(np.arange(-.5, 6, 1), minor=True)
-#         axs.set_yticks(np.arange(-.5, 5, 1), minor=True)
-#         axs.grid(which='minor', color='w', linestyle='-', linewidth=2.1)
-#
-#         # Despine
-#         for edge in ['left', 'right', 'bottom', 'top']:
-#             axs.spines[edge].set_color('#FFFFFF')
-#
-#         # Annotate
-#         for w in range(len(weeks)):
-#             for d in range(len(days)):
-#                 day_val = day_vals[i+1][w, d]
-#                 day_num = day_nums[i+1][w, d]
-#                 # If day number is a valid calendar day, add an annotation
-#                 if not np.isnan(day_num):
-#                     # axs.text(d+0.45, w-0.31, f"{day_num:0.0f}",
-#                     axs.text(d+0.42, w-0.27, f"{day_num:0.0f}",
-#                              ha="right", va="center",
-#                              fontsize=14, color="#003333", alpha=0.8)  # day
-#
-#                 # Aesthetic background for calendar day number
-#                 patch_coords = ((d-0.4, w-0.5),
-#                                 (d+0.5, w-0.5),
-#                                 (d+0.5, w+0.4))
-#
-#                 triangle = Polygon(patch_coords, fc='w', alpha=0.7)
-#                 axs.add_artist(triangle)
-#
-#         # Final adjustments
-#         plt.subplots_adjust(left=0.04, right=0.96, top=0.88, bottom=0.04)
-#         # plt.subplots_adjust(left=0.04, right=0.96, top=0.96, bottom=0.04)
-#         fig.tight_layout()
-#
-#         # Save to file
-#         outname = f'images/{file_prefix}{i+1:02}.png'
-#         plt.savefig(outname, dpi=120)
+def create_month_calendars(day_nums, day_vals, file_prefix='example'):
+    for i in range(0, 12):
+        fig, axs = plt.subplots(1, 1, figsize=(5, 4))
+        # axs.imshow(day_vals[i+1], cmap='Purples', vmin=-0.05, vmax=1.25)  # heatmap
+        axs.imshow(day_vals[i+1], cmap='gist_ncar_r', vmin=0.0, vmax=6.0)  # heatmap
+        axs.set_title(month_names[i], fontsize=20)
+
+        # Labels
+        axs.set_xticks(np.arange(len(days)))
+        axs.set_xticklabels(days, fontsize=14, fontweight='bold', color='#555555')
+        axs.set_yticklabels([])
+
+        # Tick marks
+        axs.tick_params(axis=u'both', which=u'both', length=0)  # remove tick marks
+        axs.xaxis.tick_top()
+
+        # Modify tick locations for proper grid placement
+        axs.set_xticks(np.arange(-.5, 6, 1), minor=True)
+        axs.set_yticks(np.arange(-.5, 5, 1), minor=True)
+        axs.grid(which='minor', color='w', linestyle='-', linewidth=2.1)
+
+        # Despine
+        for edge in ['left', 'right', 'bottom', 'top']:
+            axs.spines[edge].set_color('#FFFFFF')
+
+        # Annotate
+        for w in range(len(weeks)):
+            for d in range(len(days)):
+                day_val = day_vals[i+1][w, d]
+                day_num = day_nums[i+1][w, d]
+                # If day number is a valid calendar day, add an annotation
+                if not np.isnan(day_num):
+                    # axs.text(d+0.45, w-0.31, f"{day_num:0.0f}",
+                    axs.text(d+0.42, w-0.27, f"{day_num:0.0f}",
+                             ha="right", va="center",
+                             fontsize=14, color="#003333", alpha=0.8)  # day
+
+                # Aesthetic background for calendar day number
+                patch_coords = ((d-0.4, w-0.5),
+                                (d+0.5, w-0.5),
+                                (d+0.5, w+0.4))
+
+                triangle = Polygon(patch_coords, fc='w', alpha=0.7)
+                axs.add_artist(triangle)
+
+        # Final adjustments
+        plt.subplots_adjust(left=0.04, right=0.96, top=0.88, bottom=0.04)
+        # plt.subplots_adjust(left=0.04, right=0.96, top=0.96, bottom=0.04)
+        fig.tight_layout()
+
+        # Save to file
+        outname = f'images/{file_prefix}{i+1:02}.png'
+        plt.savefig(outname, dpi=120)
+        plt.close()
 
 def first_pass_of_year(start_date, year, interval):
     year_start_dt = pd.to_datetime(f'{year}-01-01')
     offset = (pd.to_datetime(start_date) - year_start_dt).days % interval
     first_dt = year_start_dt + pd.to_timedelta(offset, 'D')
     return first_dt.strftime('%Y-%m-%d')
+
+def ann_calendar_text(acqs, full_paths, part_paths, yr_starts, basename, pass_int):
+    full_acqs = [int(x) for x in acqs if 'p' not in x]
+    part_acqs = [int(x[:-1]) for x in acqs if 'p' in x]
+    full_start_dates = yr_starts.query(f'acqday in {full_acqs}').start_date.values.tolist()
+    part_start_dates = yr_starts.query(f'acqday in {part_acqs}').start_date.values.tolist()
+    df_list = []
+    i=1
+    for start, path in zip(full_start_dates, full_paths):
+        dates = pd.date_range(start, end=f'{year}-12-31', freq=f'{pass_int}D')
+        i_df = pd.DataFrame({'date': dates, 'path': path, 'coverage': 'full', 'colorid': i})
+        df_list.append(i_df)
+        i+=1
+    i=4
+    for start, path in zip(part_start_dates, part_paths):
+        dates = pd.date_range(start, end=f'{year}-12-31', freq=f'{pass_int}D')
+        i_df = pd.DataFrame({'date': dates, 'path': path, 'coverage': 'partial', 'colorid': i})
+        df_list.append(i_df)
+        i+=1
+    df_all = (
+        pd
+        .concat(df_list)
+        .rename(columns={'path': colname})
+        .sort_values(['date'])
+    )
+    (
+        df_all
+        .drop(['colorid'], axis=1)
+        .to_csv(f'text_calendars/{basename}.csv', index=False)
+    )
+    return df_all
+
+# make graphical calendars
+def ann_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths):
+    date_gen = pd.DataFrame({
+        'date': yr_dates
+        , 'colorid':0
+    })
+    color_ids = (
+        pd
+        .concat([date_gen, df_all.loc[:, ['date', 'colorid']]])
+        .sort_values(['date', 'colorid'], ascending=[True, False])
+        .drop_duplicates(['date'])
+        .colorid
+    )
+    df_dates = pd.Series(color_ids.values, index=yr_dates)
+    day_nums, day_vals = split_months(df_dates, year)
+    create_year_calendar(day_nums, day_vals, file_prefix=basename, color_dict=color_dict, full_paths=full_paths, part_paths=part_paths)
+
+def month_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths):
+    date_gen = pd.DataFrame({
+        'date': yr_dates
+        , 'colorid':0
+    })
+    color_ids = (
+        pd
+        .concat([date_gen, df_all.loc[:, ['date', 'colorid']]])
+        .sort_values(['date', 'colorid'], ascending=[True, False])
+        .drop_duplicates(['date'])
+        .colorid
+    )
+    df_dates = pd.Series(color_ids.values, index=yr_dates)
+    day_nums, day_vals = split_months(df_dates, year)
+    create_month_calendars(day_nums, day_vals, file_prefix=basename)
 
 # BODY
 # def main():
@@ -254,10 +324,42 @@ if 1:
     s2_dates = pd.read_csv(s2_acq_dates_file)
     s2_ids = wb_coverage.loc[:, ['s2_id', 's2_acq_id']].drop_duplicates()
     l8_ids = wb_coverage.loc[:, ['l8_id', 'l8_acq_id']].drop_duplicates()
+    l8_path_acq = (
+        gpd
+        .read_file(l8_paths_file)
+        .rename(columns={'acqdayl8': 'acqday'})
+        .astype({'path': 'int64'})
+        .loc[:, ['path', 'acqday']]
+    )
+    l8_path_acq_dict = {pth: acq for pth, acq in l8_path_acq.itertuples(index=False, name=None)}
+    s2_track_acq = pd.read_csv(s2_track_acq_file)
+    s2_track_acq_dict = {trk: acq for trk, acq in s2_track_acq.itertuples(index=False, name=None)}
+    l8_overlap = (
+        gpd
+        .read_file(l8_overlap_file)
+        .query('n_paths<4')
+        .assign(paths = lambda x: [str(sorted(set([int(id) for id in ids.split(',')])))[1:-1].replace(', ', '_') for ids in x.paths])
+        .paths
+        .unique()
+    )
+    l8_overlap_acq = [str(sorted(set([int(l8_path_acq_dict[int(id)]) for id in ids.split('_')])))[1: -1].replace(', ', '_') for ids in l8_overlap]
+    l8_overlap_ids = pd.DataFrame({'l8_id': l8_overlap, 'l8_acq_id': l8_overlap_acq})
+    s2_overlap = (
+        gpd
+        .read_file(s2_overlap_file)
+        .query('n_tracks<4')
+        .assign(tracks = lambda x: [str(sorted(set([int(id) for id in ids.split(',')])))[1:-1].replace(', ', '_') for ids in x.tracks])
+        .tracks
+        .unique()
+    )
+    s2_overlap_acq = [str(sorted(set([int(s2_track_acq_dict[int(id)]) for id in ids.split('_')])))[1: -1].replace(', ', '_') for ids in s2_overlap]
+    s2_overlap_ids = pd.DataFrame({'s2_id': s2_overlap, 's2_acq_id': s2_overlap_acq})
+    # todo: here - make id files
     # define some settings
     intervals = {'s2': 5, 'l8': 16}
     start_dates = {'s2': s2_dates, 'l8': l8_dates}
     cov_ids = {'s2': s2_ids, 'l8': l8_ids}
+    over_cov_ids = {'s2': s2_overlap_ids, 'l8': l8_overlap_ids}
     col_names = {'s2': 'track', 'l8': 'path'}
     weeks = [1, 2, 3, 4, 5, 6]
     # days = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
@@ -270,6 +372,7 @@ if 1:
     for sat in ['s2', 'l8']:
         pass_int = intervals[sat]
         ids = cov_ids[sat]
+        over_ids = over_cov_ids[sat]
         colname = col_names[sat]
         # loop over years
         for year in years:
@@ -278,53 +381,45 @@ if 1:
                 .assign(start_date = lambda x: [first_pass_of_year(date, year, pass_int) for date in x.date])
             )
             yr_dates = pd.date_range(f'{year}-01-01', end=f'{year}-12-31', freq='D')
-            # loop over ids
-            for id, acq_id in ids.itertuples(index=False, name=None):
-                acqs = acq_id.split('_')
-                full_acqs = [int(x) for x in acqs if 'p' not in x]
-                part_acqs = [int(x[:-1]) for x in acqs if 'p' in x]
-                paths = id.split('_')
-                full_paths = [int(x) for x in paths if 'p' not in x]
-                part_paths = [int(x[:-1]) for x in paths if 'p' in x]
-                full_start_dates = yr_starts.query(f'acqday in {full_acqs}').start_date.values.tolist()
-                part_start_dates = yr_starts.query(f'acqday in {part_acqs}').start_date.values.tolist()
-                basename = f'{sat}_{id}_{year}'
-                # make csv of dates
-                df_list = []
-                i=1
-                for start, path in zip(full_start_dates, full_paths):
-                    dates = pd.date_range(start, end=f'{year}-12-31', freq=f'{pass_int}D')
-                    i_df = pd.DataFrame({'date': dates, 'path': path, 'coverage': 'full', 'colorid': i})
-                    df_list.append(i_df)
-                    i+=1
-                i=4
-                for start, path in zip(part_start_dates, part_paths):
-                    dates = pd.date_range(start, end=f'{year}-12-31', freq=f'{pass_int}D')
-                    i_df = pd.DataFrame({'date': dates, 'path': path, 'coverage': 'partial', 'colorid': i})
-                    df_list.append(i_df)
-                    i+=1
-                df_all = (
-                    pd
-                    .concat(df_list)
-                    .rename(columns={'path': colname})
-                    .sort_values(['date'])
-                )
-                df_all.drop(['colorid'], axis=1).to_csv(f'text_calendars/{basename}.csv', index=False)
-                # make graphical calendars
-                date_gen = pd.DataFrame({
-                    'date': yr_dates
-                    , 'colorid':0
-                })
-                color_ids = (
-                    pd
-                    .concat([date_gen, df_all.loc[:, ['date', 'colorid']]])
-                    .sort_values(['date', 'colorid'], ascending=[True, False])
-                    .drop_duplicates(['date'])
-                    .colorid
-                )
-                df_dates = pd.Series(color_ids.values, index=yr_dates)
-                day_nums, day_vals = split_months(df_dates, year)
-                create_year_calendar(day_nums, day_vals, file_prefix=basename, color_dict=color_dict, full_paths=full_paths, part_paths=part_paths)
+            if wb_ann_calendars:
+                # loop over ids
+                for id, acq_id in ids.itertuples(index=False, name=None):
+                    paths = id.split('_')
+                    full_paths = [int(x) for x in paths if 'p' not in x]
+                    part_paths = [int(x[:-1]) for x in paths if 'p' in x]
+                    acqs = acq_id.split('_')
+                    basename = f'{sat}_{id}_{year}'
+                    # make csv of dates
+                    filename = f'text_calendars/{basename}.csv'
+                    df_all = ann_calendar_text(acqs, full_paths, part_paths, yr_starts, basename, pass_int)
+                    # make graphical calendars
+                    filename = f'images/{basename}.pdf'
+                    if ann_graph:
+                        if not os.path.exists(filename):
+                            ann_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
+                    if mon_graph:
+                        if not os.path.exists(filename.replace('.pdf', '01.png')):
+                            if len(part_paths)==0:
+                                month_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
+            elif path_month_and_ann_calendars:
+                for id, acq_id in over_ids.itertuples(index=False, name=None):
+                    if id not in list(ids.iloc[:, 0]):
+                        paths = id.split('_')
+                        full_paths = [int(x) for x in paths if 'p' not in x]
+                        part_paths = [int(x[:-1]) for x in paths if 'p' in x]
+                        acqs = acq_id.split('_')
+                        basename = f'{sat}_{id}_{year}'
+                        # make csv of dates
+                        df_all = ann_calendar_text(acqs, full_paths, part_paths, yr_starts, basename, pass_int)
+                        # make graphical calendars
+                        filename = f'images/{basename}.pdf'
+                        if ann_graph:
+                            if not os.path.exists(filename):
+                                ann_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
+                        if mon_graph:
+                            if not os.path.exists(filename.replace('.pdf', '01.png')):
+                                month_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
+
     #         # loop over acq_dates
     #         for acqday, yr_start in zip(yr_starts.acqday, yr_starts.start_date):
     #             file_prefix = f'{sat}_acqday{acqday}_{year}'
