@@ -25,7 +25,7 @@ ann_graph = True
 mon_graph = True
 path_month_and_ann_calendars = True
 years = [2020, 2021]
-colors = ['#ffffff', '#663399', '#003366', '#006400', '#ffcccb', '#ffae42', '#98fb98', '#ffffbf', '#d9d9d9', '#d3bda6']
+colors = ['#ffffff', '#663399', '#003366', '#006400', '#ffcccb', '#ffae42', '#98fb98', '#ffffbf', '#d9d9d9', '#d3bda6', '#add8e6', '#ddd3ee', '#faafd5', '#eefddf']
 
 # FUNCTIONS
 def date_series(full_starts, return_period, partial_starts=None):
@@ -384,16 +384,16 @@ if 1:
             if wb_ann_calendars:
                 # loop over ids
                 for id, acq_id in ids.itertuples(index=False, name=None):
-                    paths = id.split('_')
-                    full_paths = [int(x) for x in paths if 'p' not in x]
-                    part_paths = [int(x[:-1]) for x in paths if 'p' in x]
-                    acqs = acq_id.split('_')
                     basename = f'{sat}_{id}_{year}'
-                    # make csv of dates
                     filename = f'text_calendars/{basename}.csv'
-                    df_all = ann_calendar_text(acqs, full_paths, part_paths, yr_starts, basename, pass_int)
+                    if (not os.path.exists(filename)) or (not os.path.exists(filename.replace('.pdf', '01.png'))):
+                        paths = id.split('_')
+                        full_paths = [int(x) for x in paths if 'p' not in x]
+                        part_paths = [int(x[:-1]) for x in paths if 'p' in x]
+                        acqs = acq_id.split('_')
+                        # make csv of dates
+                        df_all = ann_calendar_text(acqs, full_paths, part_paths, yr_starts, basename, pass_int)
                     # make graphical calendars
-                    filename = f'images/{basename}.pdf'
                     if ann_graph:
                         if not os.path.exists(filename):
                             ann_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
@@ -401,24 +401,26 @@ if 1:
                         if not os.path.exists(filename.replace('.pdf', '01.png')):
                             if len(part_paths)==0:
                                 month_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
-            elif path_month_and_ann_calendars:
+            if path_month_and_ann_calendars:
                 for id, acq_id in over_ids.itertuples(index=False, name=None):
-                    if id not in list(ids.iloc[:, 0]):
-                        paths = id.split('_')
-                        full_paths = [int(x) for x in paths if 'p' not in x]
-                        part_paths = [int(x[:-1]) for x in paths if 'p' in x]
-                        acqs = acq_id.split('_')
+                    # if id not in list(ids.iloc[:, 0]):
+                    if 1:
                         basename = f'{sat}_{id}_{year}'
-                        # make csv of dates
-                        df_all = ann_calendar_text(acqs, full_paths, part_paths, yr_starts, basename, pass_int)
-                        # make graphical calendars
                         filename = f'images/{basename}.pdf'
-                        if ann_graph:
-                            if not os.path.exists(filename):
-                                ann_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
-                        if mon_graph:
-                            if not os.path.exists(filename.replace('.pdf', '01.png')):
-                                month_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
+                        if (not os.path.exists(filename)) or (not os.path.exists(filename.replace('.pdf', '01.png'))):
+                            paths = id.split('_')
+                            full_paths = [int(x) for x in paths if 'p' not in x]
+                            part_paths = [int(x[:-1]) for x in paths if 'p' in x]
+                            acqs = acq_id.split('_')
+                            # make csv of dates
+                            df_all = ann_calendar_text(acqs, full_paths, part_paths, yr_starts, basename, pass_int)
+                            # make graphical calendars
+                            if ann_graph:
+                                if not os.path.exists(filename):
+                                    ann_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
+                            if mon_graph:
+                                if not os.path.exists(filename.replace('.pdf', '01.png')):
+                                    month_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
 
     #         # loop over acq_dates
     #         for acqday, yr_start in zip(yr_starts.acqday, yr_starts.start_date):
