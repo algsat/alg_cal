@@ -8,6 +8,7 @@ from matplotlib.patches import Polygon
 from matplotlib.colors import ListedColormap
 import matplotlib as mpl
 import seaborn as sns
+from datetime import datetime
 
 # INPUT
 # files
@@ -20,10 +21,11 @@ l8_paths_file = 'data/l8_paths.shp'
 s2_track_acq_file = 'data/s2_track_acqday.csv'
 
 # settings
-wb_ann_calendars = True
-ann_graph = True
-mon_graph = True
-path_month_and_ann_calendars = True
+wb_ann_calendars = False
+ann_graph = False
+mon_graph = False
+path_month_and_ann_calendars = False
+combined_monthly_calendars = True
 years = [2020, 2021]
 colors = ['#ffffff', '#663399', '#003366', '#006400', '#ffcccb', '#ffae42', '#98fb98', '#ffffbf', '#d9d9d9', '#d3bda6', '#add8e6', '#ddd3ee', '#faafd5', '#eefddf']
 
@@ -299,7 +301,7 @@ def ann_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_
     day_nums, day_vals = split_months(df_dates, year)
     create_year_calendar(day_nums, day_vals, file_prefix=basename, color_dict=color_dict, full_paths=full_paths, part_paths=part_paths)
 
-def month_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths):
+def month_calendar_graph(df_all, yr_dates, basename, color_dict):
     date_gen = pd.DataFrame({
         'date': yr_dates
         , 'colorid':0
@@ -315,6 +317,108 @@ def month_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, par
     day_nums, day_vals = split_months(df_dates, year)
     create_month_calendars(day_nums, day_vals, file_prefix=basename)
 
+def make_month_calendar(ax, day_nums, day_vals, color_dict, mon_i):
+    # get cmap
+    un_vals = np.array([val for val in np.sort(np.unique(day_vals[mon_i+1])) if not np.isnan(val)])
+    color_list = [color_dict[val] for val in un_vals]
+    cmap = ListedColormap(color_list)
+    norm = mpl.colors.BoundaryNorm([-0.5] + list(un_vals + 0.5) ,cmap.N)
+    # plot
+    ax.imshow(day_vals[mon_i+1], cmap=cmap, norm=norm)
+    ax.set_title(month_names[mon_i], fontsize=20)
+    # Labels
+    ax.set_xticks(np.arange(len(days)))
+    ax.set_xticklabels(days, fontsize=14, fontweight='bold', color='#555555')
+    ax.set_yticklabels([])
+    # Tick marks
+    ax.tick_params(axis=u'both', which=u'both', length=0)  # remove tick marks
+    ax.xaxis.tick_top()
+    # Modify tick locations for proper grid placement
+    ax.set_xticks(np.arange(-.5, 6, 1), minor=True)
+    ax.set_yticks(np.arange(-.5, 5, 1), minor=True)
+    ax.grid(which='minor', color='w', linestyle='-', linewidth=2.1)
+    # Despine
+    for edge in ['left', 'right', 'bottom', 'top']:
+        ax.spines[edge].set_color('#FFFFFF')
+    # Annotate
+    for w in range(len(weeks)):
+        for d in range(len(days)):
+            day_val = day_vals[mon_i+1][w, d]
+            day_num = day_nums[mon_i+1][w, d]
+            # If day number is a valid calendar day, add an annotation
+            if not np.isnan(day_num):
+                # axs.text(d+0.45, w-0.31, f"{day_num:0.0f}",
+                ax.text(d+0.42, w-0.27, f"{day_num:0.0f}",
+                         ha="right", va="center",
+                         fontsize=14, color="#003333", alpha=0.8)  # day
+            # Aesthetic background for calendar day number
+            patch_coords = ((d-0.4, w-0.5),
+                            (d+0.5, w-0.5),
+                            (d+0.5, w+0.4))
+            triangle = Polygon(patch_coords, fc='w', alpha=0.7)
+            ax.add_artist(triangle)
+    return ax
+
+def create_comb_month_calendars(s2_day_nums, l8_day_nums, s2_day_vals, l8_day_vals, color_dict, file_prefix='example'):
+    for i in range(0, 12):
+        # set up grid
+        fig = plt.figure(figsize=(10, 5))
+        gs = fig.add_gridspec(nrows=9, ncols=10, wspace=0.5, hspace=0.0)
+        ax_s2 = fig.add_subplot(gs[:7, :5])
+        ax_l8 = fig.add_subplot(gs[:7, 5:])
+        ax_leg = fig.add_subplot(gs[7:, :])
+        # make calendars
+        ax_s2 = make_month_calendar(ax_s2, s2_day_nums, s2_day_vals, color_dict, i)
+        ax_l8 = make_month_calendar(ax_l8, l8_day_nums, l8_day_vals, color_dict, i)
+        ax_s2.set_title(f'{ax_s2.get_title()}: Sentinel-2', fontsize=20)
+        ax_l8.set_title(f'{ax_l8.get_title()}: Landsat 8', fontsize=20)
+        # make legend
+        # simplify legend axis
+        ax_leg.tick_params(axis=u'both', which=u'both', length=0)  # remove tick marks
+        ax_leg.xaxis.tick_top()
+        # Despine
+        for edge in ['left', 'right', 'bottom', 'top']:
+            ax_leg.spines[edge].set_color('#FFFFFF')
+        ax_leg.set_yticklabels([])
+        ax_leg.set_xticklabels([])
+        elem_full = Line2D([0], [0], marker='s', color='w', markerfacecolor=color_dict[1], label='full', markersize=35)
+        elem_part = Line2D([0], [0], marker='s', color='w', markerfacecolor=color_dict[4], label='partial', markersize=35)
+        ax_leg.legend(handles=[elem_full, elem_part], loc=10, frameon=False, borderpad=0, borderaxespad=0, ncol=2, fontsize=16)
+        ax_leg.set_title('waterbody coverage', fontsize=16)
+        # Final adjustments
+        # plt.subplots_adjust(left=0.04, right=0.96, top=0.88, bottom=0.04)
+        # plt.subplots_adjust(left=0.04, right=0.96, top=0.96, bottom=0.04)
+        # fig.tight_layout()
+        # Save to file
+        outname = f'images/{file_prefix}{i+1:02}.png'
+        plt.savefig(outname, dpi=120)
+        plt.close()
+
+def month_comb_calendar_graph(s2_df_all, l8_df_all, yr_dates, basename, color_dict):
+    date_gen = pd.DataFrame({
+        'date': yr_dates
+        , 'colorid':0
+    })
+    s2_color_ids = (
+        pd
+        .concat([date_gen, s2_df_all.loc[:, ['date', 'colorid']]])
+        .sort_values(['date', 'colorid'], ascending=[True, False])
+        .drop_duplicates(['date'])
+        .colorid
+    )
+    df_s2_dates = pd.Series(s2_color_ids.values, index=yr_dates)
+    s2_day_nums, s2_day_vals = split_months(df_s2_dates, year)
+    l8_color_ids = (
+        pd
+        .concat([date_gen, l8_df_all.loc[:, ['date', 'colorid']]])
+        .sort_values(['date', 'colorid'], ascending=[True, False])
+        .drop_duplicates(['date'])
+        .colorid
+    )
+    df_l8_dates = pd.Series(l8_color_ids.values, index=yr_dates)
+    l8_day_nums, l8_day_vals = split_months(df_l8_dates, year)
+    create_comb_month_calendars(s2_day_nums, l8_day_nums, s2_day_vals, l8_day_vals, color_dict, file_prefix=basename)
+
 # BODY
 # def main():
 if 1:
@@ -324,6 +428,12 @@ if 1:
     s2_dates = pd.read_csv(s2_acq_dates_file)
     s2_ids = wb_coverage.loc[:, ['s2_id', 's2_acq_id']].drop_duplicates()
     l8_ids = wb_coverage.loc[:, ['l8_id', 'l8_acq_id']].drop_duplicates()
+    s2_l8_ids = (
+        wb_coverage
+        .loc[:, ['s2_id', 'l8_id']]
+        .drop_duplicates()
+        .itertuples(index=False, name=None)
+    )
     l8_path_acq = (
         gpd
         .read_file(l8_paths_file)
@@ -368,6 +478,7 @@ if 1:
     month_names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
                    'September', 'October', 'November', 'December']
     color_dict = {i: col for i,col in enumerate(colors)}
+    dateparser = lambda x: datetime.strptime(x, "%Y-%m-%d")
     # loop over satellites
     for sat in ['s2', 'l8']:
         pass_int = intervals[sat]
@@ -400,7 +511,7 @@ if 1:
                     if mon_graph:
                         if not os.path.exists(filename.replace('.pdf', '01.png')):
                             if len(part_paths)==0:
-                                month_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
+                                month_calendar_graph(df_all, yr_dates, basename, color_dict)
             if path_month_and_ann_calendars:
                 for id, acq_id in over_ids.itertuples(index=False, name=None):
                     # if id not in list(ids.iloc[:, 0]):
@@ -420,13 +531,26 @@ if 1:
                                     ann_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
                             if mon_graph:
                                 if not os.path.exists(filename.replace('.pdf', '01.png')):
-                                    month_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
+                                    month_calendar_graph(df_all, yr_dates, basename, color_dict)
 
-    #         # loop over acq_dates
-    #         for acqday, yr_start in zip(yr_starts.acqday, yr_starts.start_date):
-    #             file_prefix = f'{sat}_acqday{acqday}_{year}'
-                # df = date_series(yr_start, pass_int)
-                # day_nums, day_vals = split_months(df, year)
-    #             create_month_calendar(day_nums, day_vals, file_prefix=file_prefix, color_dict=color_dict)
+    if combined_monthly_calendars:
+        for s2_id, l8_id in s2_l8_ids:
+            for year in years:
+                basename = f's2_{s2_id}_l8_{l8_id}_{year}'
+                if not os.path.exists(f'images/{basename}01.png'):
+                    s2_text_name = f'text_calendars/s2_{s2_id}_{year}.csv'
+                    l8_text_name = f'text_calendars/l8_{l8_id}_{year}.csv'
+                    s2_df_all = (
+                        pd
+                        .read_csv(s2_text_name, parse_dates=[0], date_parser=dateparser)
+                        .assign(colorid = lambda x: [1 if cov=='full' else 4 for cov in x.coverage])
+                    )
+                    l8_df_all = (
+                        pd
+                        .read_csv(l8_text_name, parse_dates=[0], date_parser=dateparser)
+                        .assign(colorid = lambda x: [1 if cov=='full' else 4 for cov in x.coverage])
+                    )
+                    yr_dates = pd.date_range(f'{year}-01-01', end=f'{year}-12-31', freq='D')
+                    month_comb_calendar_graph(s2_df_all, l8_df_all, yr_dates, basename, color_dict)
 # if __name__ == "main":
-#     main()
+#     main(False
