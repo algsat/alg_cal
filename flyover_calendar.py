@@ -26,7 +26,7 @@ ann_graph = False
 mon_graph = False
 path_month_and_ann_calendars = False
 combined_monthly_calendars = True
-years = [2020, 2021]
+years = [2021, 2022]
 colors = ['#ffffff', '#663399', '#003366', '#006400', '#ffcccb', '#ffae42', '#98fb98', '#ffffbf', '#d9d9d9', '#d3bda6', '#add8e6', '#ddd3ee', '#faafd5', '#eefddf']
 
 # FUNCTIONS
