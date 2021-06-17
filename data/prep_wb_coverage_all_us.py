@@ -57,6 +57,9 @@ for i in range(len(path_combo_df)):
     if s2_part_acq == 'p':
         s2_acq = s2_full_acq
         s2_paths = s2_full.replace(';', '_')
+    elif s2_full_acq == '':
+        s2_acq = s2_part_acq
+        s2_paths = s2_part.replace(';', 'p_') + 'p'
     else:
         s2_acq = s2_full_acq + '_' + s2_part_acq
         s2_paths = (
@@ -71,6 +74,9 @@ for i in range(len(path_combo_df)):
     if l8_part_acq == 'p':
         l8_acq = l8_full_acq
         l8_paths = l8_full.replace(';', '_')
+    elif l8_full_acq == '':
+        l8_acq = l8_part_acq
+        l8_paths = l8_part.replace(';', 'p_') + 'p'
     else:
         l8_acq = l8_full_acq + '_' + l8_part_acq
         l8_paths = (

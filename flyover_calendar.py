@@ -16,18 +16,21 @@ s2_acq_dates_file = 'data/s2_acqday_dates.csv'
 l8_acq_dates_file = 'data/l8_acqday_dates.csv'
 s2_overlap_file = 'data/s2_over.shp'
 l8_overlap_file = 'data/l8_over.shp'
-wb_coverage_file = 'data/wb_coverage.csv'
+wb_coverage_file = 'data/wb_coverage-all_us.csv'
 l8_paths_file = 'data/l8_paths.shp'
 s2_track_acq_file = 'data/s2_track_acqday.csv'
 
 # settings
-wb_ann_calendars = False
-ann_graph = False
-mon_graph = False
-path_month_and_ann_calendars = False
+wb_ann_calendars = True
+ann_graph = True
+mon_graph = True
+path_month_and_ann_calendars = True
 combined_monthly_calendars = True
 years = [2021, 2022]
 colors = ['#ffffff', '#663399', '#003366', '#006400', '#ffcccb', '#ffae42', '#98fb98', '#ffffbf', '#d9d9d9', '#d3bda6', '#add8e6', '#ddd3ee', '#faafd5', '#eefddf']
+
+# other
+mpl.use("Agg")
 
 # FUNCTIONS
 def date_series(full_starts, return_period, partial_starts=None):
@@ -190,7 +193,7 @@ def create_year_calendar(day_nums, day_vals, file_prefix='example', color_dict=N
     # Save to file
     outname = f'images/{file_prefix}.pdf'
     plt.savefig(outname, dpi=120)
-    plt.close()
+    plt.close('all')
 
 def create_month_calendars(day_nums, day_vals, file_prefix='example'):
     for i in range(0, 12):
@@ -245,7 +248,7 @@ def create_month_calendars(day_nums, day_vals, file_prefix='example'):
         # Save to file
         outname = f'images/{file_prefix}{i+1:02}.png'
         plt.savefig(outname, dpi=120)
-        plt.close()
+        plt.close('all')
 
 def first_pass_of_year(start_date, year, interval):
     year_start_dt = pd.to_datetime(f'{year}-01-01')
@@ -392,7 +395,7 @@ def create_comb_month_calendars(s2_day_nums, l8_day_nums, s2_day_vals, l8_day_va
         # Save to file
         outname = f'images/{file_prefix}{i+1:02}.png'
         plt.savefig(outname, dpi=120)
-        plt.close()
+        plt.close('all')
 
 def month_comb_calendar_graph(s2_df_all, l8_df_all, yr_dates, basename, color_dict):
     date_gen = pd.DataFrame({
@@ -508,10 +511,12 @@ if 1:
                     if ann_graph:
                         if not os.path.exists(filename):
                             ann_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
+                            plt.close('all')
                     if mon_graph:
                         if not os.path.exists(filename.replace('.pdf', '01.png')):
                             if len(part_paths)==0:
                                 month_calendar_graph(df_all, yr_dates, basename, color_dict)
+                                plt.close('all')            
             if path_month_and_ann_calendars:
                 for id, acq_id in over_ids.itertuples(index=False, name=None):
                     # if id not in list(ids.iloc[:, 0]):
@@ -529,10 +534,11 @@ if 1:
                             if ann_graph:
                                 if not os.path.exists(filename):
                                     ann_calendar_graph(df_all, yr_dates, basename, color_dict, full_paths, part_paths)
+                                    plt.close('all')
                             if mon_graph:
                                 if not os.path.exists(filename.replace('.pdf', '01.png')):
                                     month_calendar_graph(df_all, yr_dates, basename, color_dict)
-
+                                    plt.close('all')
     if combined_monthly_calendars:
         for s2_id, l8_id in s2_l8_ids:
             for year in years:
@@ -552,5 +558,6 @@ if 1:
                     )
                     yr_dates = pd.date_range(f'{year}-01-01', end=f'{year}-12-31', freq='D')
                     month_comb_calendar_graph(s2_df_all, l8_df_all, yr_dates, basename, color_dict)
+                    plt.close('all')
 # if __name__ == "main":
 #     main(False
