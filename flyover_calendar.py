@@ -1,3 +1,4 @@
+#%%
 # IMPORT
 import os
 import numpy as np
@@ -13,11 +14,11 @@ from datetime import datetime
 # INPUT
 # files
 s2_acq_dates_file = 'data/s2_acqday_dates.csv'
-l8_acq_dates_file = 'data/l8_acqday_dates.csv'
+l8_9_acq_dates_file = 'data/l8_9_acqday_dates.csv'
 s2_overlap_file = 'data/s2_over.shp'
-l8_overlap_file = 'data/l8_over.shp'
+l8_9_overlap_file = 'data/l8_9_over.shp'
 wb_coverage_file = 'data/wb_coverage-all_us.csv'
-l8_paths_file = 'data/l8_paths.shp'
+l8_9_paths_file = 'data/l8_9_paths.shp'
 s2_track_acq_file = 'data/s2_track_acqday.csv'
 
 # settings
@@ -26,8 +27,12 @@ ann_graph = True
 mon_graph = True
 path_month_and_ann_calendars = True
 combined_monthly_calendars = True
-years = [2021, 2022]
-colors = ['#ffffff', '#663399', '#003366', '#006400', '#ffcccb', '#ffae42', '#98fb98', '#ffffbf', '#d9d9d9', '#d3bda6', '#add8e6', '#ddd3ee', '#faafd5', '#eefddf']
+years = [2024]
+colors = [
+    '#ffffff', '#663399', '#003366', '#006400', '#ffcccb', '#ffae42'
+    , '#98fb98', '#ffffbf', '#d9d9d9', '#d3bda6', '#add8e6', '#ddd3ee'
+    , '#faafd5', '#eefddf'
+]
 
 # other
 mpl.use("Agg")
@@ -362,19 +367,19 @@ def make_month_calendar(ax, day_nums, day_vals, color_dict, mon_i):
             ax.add_artist(triangle)
     return ax
 
-def create_comb_month_calendars(s2_day_nums, l8_day_nums, s2_day_vals, l8_day_vals, color_dict, file_prefix='example'):
+def create_comb_month_calendars(s2_day_nums, l8_9_day_nums, s2_day_vals, l8_9_day_vals, color_dict, file_prefix='example'):
     for i in range(0, 12):
         # set up grid
         fig = plt.figure(figsize=(10, 5))
         gs = fig.add_gridspec(nrows=9, ncols=10, wspace=0.5, hspace=0.0)
         ax_s2 = fig.add_subplot(gs[:7, :5])
-        ax_l8 = fig.add_subplot(gs[:7, 5:])
+        ax_l8_9 = fig.add_subplot(gs[:7, 5:])
         ax_leg = fig.add_subplot(gs[7:, :])
         # make calendars
         ax_s2 = make_month_calendar(ax_s2, s2_day_nums, s2_day_vals, color_dict, i)
-        ax_l8 = make_month_calendar(ax_l8, l8_day_nums, l8_day_vals, color_dict, i)
+        ax_l8_9 = make_month_calendar(ax_l8_9, l8_9_day_nums, l8_9_day_vals, color_dict, i)
         ax_s2.set_title(f'{ax_s2.get_title()}: Sentinel-2', fontsize=20)
-        ax_l8.set_title(f'{ax_l8.get_title()}: Landsat 8', fontsize=20)
+        ax_l8_9.set_title(f'{ax_l8_9.get_title()}: Landsat 8&9', fontsize=20)
         # make legend
         # simplify legend axis
         ax_leg.tick_params(axis=u'both', which=u'both', length=0)  # remove tick marks
@@ -397,7 +402,7 @@ def create_comb_month_calendars(s2_day_nums, l8_day_nums, s2_day_vals, l8_day_va
         plt.savefig(outname, dpi=120)
         plt.close('all')
 
-def month_comb_calendar_graph(s2_df_all, l8_df_all, yr_dates, basename, color_dict):
+def month_comb_calendar_graph(s2_df_all, l8_9_df_all, yr_dates, basename, color_dict):
     date_gen = pd.DataFrame({
         'date': yr_dates
         , 'colorid':0
@@ -411,52 +416,52 @@ def month_comb_calendar_graph(s2_df_all, l8_df_all, yr_dates, basename, color_di
     )
     df_s2_dates = pd.Series(s2_color_ids.values, index=yr_dates)
     s2_day_nums, s2_day_vals = split_months(df_s2_dates, year)
-    l8_color_ids = (
+    l8_9_color_ids = (
         pd
-        .concat([date_gen, l8_df_all.loc[:, ['date', 'colorid']]])
+        .concat([date_gen, l8_9_df_all.loc[:, ['date', 'colorid']]])
         .sort_values(['date', 'colorid'], ascending=[True, False])
         .drop_duplicates(['date'])
         .colorid
     )
-    df_l8_dates = pd.Series(l8_color_ids.values, index=yr_dates)
-    l8_day_nums, l8_day_vals = split_months(df_l8_dates, year)
-    create_comb_month_calendars(s2_day_nums, l8_day_nums, s2_day_vals, l8_day_vals, color_dict, file_prefix=basename)
+    df_l8_9_dates = pd.Series(l8_9_color_ids.values, index=yr_dates)
+    l8_9_day_nums, l8_9_day_vals = split_months(df_l8_9_dates, year)
+    create_comb_month_calendars(s2_day_nums, l8_9_day_nums, s2_day_vals, l8_9_day_vals, color_dict, file_prefix=basename)
 
 # BODY
 # def main():
 if 1:
     # load files
-    wb_coverage = pd.read_csv(wb_coverage_file, dtype={x: 'str' for x in ['s2_full', 's2_part', 's2_id', 's2_acq_id', 'l8_full', 'l8_part', 'l8_id', 'l8_acq_id']})
-    l8_dates = pd.read_csv(l8_acq_dates_file)
+    wb_coverage = pd.read_csv(wb_coverage_file, dtype={x: 'str' for x in ['s2_full', 's2_part', 's2_id', 's2_acq_id', 'l8_9_full', 'l8_9_part', 'l8_9_id', 'l8_9_acq_id']})
+    l8_9_dates = pd.read_csv(l8_9_acq_dates_file)
     s2_dates = pd.read_csv(s2_acq_dates_file)
     s2_ids = wb_coverage.loc[:, ['s2_id', 's2_acq_id']].drop_duplicates()
-    l8_ids = wb_coverage.loc[:, ['l8_id', 'l8_acq_id']].drop_duplicates()
-    s2_l8_ids = (
+    l8_9_ids = wb_coverage.loc[:, ['l8_9_id', 'l8_9_acq_id']].drop_duplicates()
+    s2_l8_9_ids = (
         wb_coverage
-        .loc[:, ['s2_id', 'l8_id']]
+        .loc[:, ['s2_id', 'l8_9_id']]
         .drop_duplicates()
         .itertuples(index=False, name=None)
     )
-    l8_path_acq = (
+    l8_9_path_acq = (
         gpd
-        .read_file(l8_paths_file)
+        .read_file(l8_9_paths_file)
         .rename(columns={'acqdayl8': 'acqday'})
         .astype({'path': 'int64'})
         .loc[:, ['path', 'acqday']]
     )
-    l8_path_acq_dict = {pth: acq for pth, acq in l8_path_acq.itertuples(index=False, name=None)}
+    l8_9_path_acq_dict = {pth: acq for pth, acq in l8_9_path_acq.itertuples(index=False, name=None)}
     s2_track_acq = pd.read_csv(s2_track_acq_file)
     s2_track_acq_dict = {trk: acq for trk, acq in s2_track_acq.itertuples(index=False, name=None)}
-    l8_overlap = (
+    l8_9_overlap = (
         gpd
-        .read_file(l8_overlap_file)
+        .read_file(l8_9_overlap_file)
         .query('n_paths<4')
         .assign(paths = lambda x: [str(sorted(set([int(id) for id in ids.split(',')])))[1:-1].replace(', ', '_') for ids in x.paths])
         .paths
         .unique()
     )
-    l8_overlap_acq = [str(sorted(set([int(l8_path_acq_dict[int(id)]) for id in ids.split('_')])))[1: -1].replace(', ', '_') for ids in l8_overlap]
-    l8_overlap_ids = pd.DataFrame({'l8_id': l8_overlap, 'l8_acq_id': l8_overlap_acq})
+    l8_9_overlap_acq = [str(sorted(set([int(l8_9_path_acq_dict[int(id)]) for id in ids.split('_')])))[1: -1].replace(', ', '_') for ids in l8_9_overlap]
+    l8_9_overlap_ids = pd.DataFrame({'l8_9_id': l8_9_overlap, 'l8_9_acq_id': l8_9_overlap_acq})
     s2_overlap = (
         gpd
         .read_file(s2_overlap_file)
@@ -469,11 +474,11 @@ if 1:
     s2_overlap_ids = pd.DataFrame({'s2_id': s2_overlap, 's2_acq_id': s2_overlap_acq})
     # todo: here - make id files
     # define some settings
-    intervals = {'s2': 5, 'l8': 16}
-    start_dates = {'s2': s2_dates, 'l8': l8_dates}
-    cov_ids = {'s2': s2_ids, 'l8': l8_ids}
-    over_cov_ids = {'s2': s2_overlap_ids, 'l8': l8_overlap_ids}
-    col_names = {'s2': 'track', 'l8': 'path'}
+    intervals = {'s2': 5, 'l8_9': 8}
+    start_dates = {'s2': s2_dates, 'l8_9': l8_9_dates}
+    cov_ids = {'s2': s2_ids, 'l8_9': l8_9_ids}
+    over_cov_ids = {'s2': s2_overlap_ids, 'l8_9': l8_9_overlap_ids}
+    col_names = {'s2': 'track', 'l8_9': 'path'}
     weeks = [1, 2, 3, 4, 5, 6]
     # days = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
     # todo: switch to sunday as beginning of week???
@@ -483,7 +488,7 @@ if 1:
     color_dict = {i: col for i,col in enumerate(colors)}
     dateparser = lambda x: datetime.strptime(x, "%Y-%m-%d")
     # loop over satellites
-    for sat in ['s2', 'l8']:
+    for sat in ['s2', 'l8_9']:
         pass_int = intervals[sat]
         ids = cov_ids[sat]
         over_ids = over_cov_ids[sat]
@@ -540,24 +545,26 @@ if 1:
                                     month_calendar_graph(df_all, yr_dates, basename, color_dict)
                                     plt.close('all')
     if combined_monthly_calendars:
-        for s2_id, l8_id in s2_l8_ids:
+        for s2_id, l8_9_id in s2_l8_9_ids:
             for year in years:
-                basename = f's2_{s2_id}_l8_{l8_id}_{year}'
+                basename = f's2_{s2_id}_l8_9_{l8_9_id}_{year}'
                 if not os.path.exists(f'images/{basename}01.png'):
                     s2_text_name = f'text_calendars/s2_{s2_id}_{year}.csv'
-                    l8_text_name = f'text_calendars/l8_{l8_id}_{year}.csv'
+                    l8_9_text_name = f'text_calendars/l8_9_{l8_9_id}_{year}.csv'
                     s2_df_all = (
                         pd
                         .read_csv(s2_text_name, parse_dates=[0], date_parser=dateparser)
                         .assign(colorid = lambda x: [1 if cov=='full' else 4 for cov in x.coverage])
                     )
-                    l8_df_all = (
+                    l8_9_df_all = (
                         pd
-                        .read_csv(l8_text_name, parse_dates=[0], date_parser=dateparser)
+                        .read_csv(l8_9_text_name, parse_dates=[0], date_parser=dateparser)
                         .assign(colorid = lambda x: [1 if cov=='full' else 4 for cov in x.coverage])
                     )
                     yr_dates = pd.date_range(f'{year}-01-01', end=f'{year}-12-31', freq='D')
-                    month_comb_calendar_graph(s2_df_all, l8_df_all, yr_dates, basename, color_dict)
+                    month_comb_calendar_graph(s2_df_all, l8_9_df_all, yr_dates, basename, color_dict)
                     plt.close('all')
 # if __name__ == "main":
 #     main(False
+
+# %%
